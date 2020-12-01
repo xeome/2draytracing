@@ -104,7 +104,7 @@ function love.update(dt)
             end
         end
         if closestx and closesty then
-			insert(reflections, {closestx, closesty, closestx - cos(rad(-ang)) * reflength, closesty - sin(rad(-ang)) * reflength})
+		insert(reflections, {closestx, closesty, closestx - cos(rad(-ang)) * reflength, closesty - sin(rad(-ang)) * reflength})
     	end
     end
 end
