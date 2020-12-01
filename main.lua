@@ -32,14 +32,17 @@ function love.load()
     raydistance = 500
     rays = {}
     reflections = {}
-    function ccw(x1, y1, x2, y2, x3, y3)
-        return (y3 - y1) * (x2 - x1) > (y2 - y1) * (x3 - x1)
-    end
     function cast(x1, y1, x2, y2, x3, y3, x4, y4)
-        local x = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4))
-        local y = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4))
-        if ccw(x1, y1, x3, y3, x4, y4) ~= ccw(x2, y2, x3, y3, x4, y4) and ccw(x1, y1, x2, y2, x3, y3) ~= ccw(x1, y1, x2, y2, x4, y4) then
-            return x, y
+        local den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+        if den == 0 then
+            return
+        end
+        local t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+        local u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den
+        if (t > 0 and t < 1 and u > 0 and u < 1) then
+            local x = x1 + t * (x2 - x1)
+            local y = y1 + t * (y2 - y1)
+            return x,y
         end
     end
 
@@ -64,16 +67,18 @@ end
 function love.update(dt)
     updatecode()
 
+    local closestx,closesty
+    local reflength
     mousex, mousey = love.mouse.getPosition()
     rays = {}
     reflections = {}
 
     for i = 0, 360 do
-    local record = 1001
-        for j = 1, #walls do
-
+    local record = raydistance + 1
+        for j,wall in ipairs(walls) do
+        	
             ang = i * 1
-            local x1, y1, x2, y2 = unpack(walls[j])
+            local x1, y1, x2, y2 = unpack(wall)
             endx, endy =
                 cast(
                 mousex,
@@ -90,16 +95,20 @@ function love.update(dt)
                 local dist = distance(mousex, mousey, endx, endy)
                 if dist < record and dist < raydistance then
                     record = dist
-                    local reflength = raydistance - dist
+
+                    reflength = raydistance - dist
+                    closestx,closesty = endx,endy
                     insert(rays, {mousex, mousey, endx, endy})
-                    insert(reflections, {endx, endy, endx - cos(rad(-ang)) * reflength, endy - sin(rad(-ang)) * reflength})
+                    
                 end
-            --else
-            --insert(rays, {mousex, mousey, mousex + cos(rad(ang)) * 1000, mousey + sin(rad(ang)) * 1000})
             end
         end
+        if closestx and closesty then
+			insert(reflections, {closestx, closesty, closestx - cos(rad(-ang)) * reflength, closesty - sin(rad(-ang)) * reflength})
+    	end
     end
 end
+
 
 
 function love.draw()
